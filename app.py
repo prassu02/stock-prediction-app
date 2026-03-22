@@ -21,9 +21,9 @@ if not os.path.exists(model_path) or not os.path.exists(scaler_path):
 model = joblib.load(model_path)
 scaler = joblib.load(scaler_path)
 
-st.title("📈 Apple Stock Price Prediction (Next 30 Days)")
+st.title("📈 Stock Price Prediction (Next 30 Days)")
 
-uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
+uploaded_file = st.file_uploader("Upload CSV / xlsx files", type=["csv", "xlsx"])
 
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
