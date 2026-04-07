@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -5,30 +6,54 @@ import joblib
 import os
 from datetime import timedelta
 
+# Models
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+from xgboost import XGBRegressor
+
 st.set_page_config(page_title="Stock Prediction App", layout="wide")
 
-# Safe path loading (Cloud compatible)
+# =============================
+# PATH SETUP
+# =============================
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 model_path = os.path.join(BASE_DIR, "models/stock_model.pkl")
 scaler_path = os.path.join(BASE_DIR, "models/scaler.pkl")
 
-# Load model
-if not os.path.exists(model_path) or not os.path.exists(scaler_path):
-    st.error("❌ Model files not found. Run train_model.py first.")
-    st.stop()
+# =============================
+# LOAD MODEL (DL)
+# =============================
 
-model = joblib.load(model_path)
-scaler = joblib.load(scaler_path)
+dl_model = None
+scaler = None
 
-st.title("📈 Stock Price Prediction (Next 30 Days)")
+if os.path.exists(model_path) and os.path.exists(scaler_path):
+    dl_model = joblib.load(model_path)
+    scaler = joblib.load(scaler_path)
 
-uploaded_file = st.file_uploader("Upload CSV / xlsx files", type=["csv", "xlsx"])
+# =============================
+# UI
+# =============================
+
+st.title("📈 AI Stock Prediction Platform (Next 30 Days)")
+
+uploaded_file = st.file_uploader("Upload CSV / Excel", type=["csv", "xlsx"])
 
 if uploaded_file:
-    df = pd.read_csv(uploaded_file)
+
+    # =============================
+    # LOAD DATA
+    # =============================
+
+    if uploaded_file.name.endswith(".csv"):
+        df = pd.read_csv(uploaded_file)
+    else:
+        df = pd.read_excel(uploaded_file)
 
     required_cols = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume']
+
     if not all(col in df.columns for col in required_cols):
         st.error("CSV must contain Date, Open, High, Low, Close, Volume")
         st.stop()
@@ -39,37 +64,134 @@ if uploaded_file:
     st.subheader("📋 Last 5 Rows")
     st.write(df.tail())
 
-    # Prepare last 30 days
-    last_30 = df[['Open', 'High', 'Low', 'Close', 'Volume']].tail(30)
+    # =============================
+    # MODEL SELECT
+    # =============================
 
-    scaled = scaler.transform(last_30)
-    X_input = scaled.reshape(1, -1)
+    st.subheader("🤖 Select Model")
 
-    predictions_scaled = []
+    model_choice = st.selectbox(
+        "Choose Model",
+        ["Deep Learning", "ARIMA", "SARIMA", "XGBoost"]
+    )
 
-    # Predict next 30 days
-    for _ in range(30):
-        pred = model.predict(X_input)[0]
-        predictions_scaled.append(pred)
+    # =============================
+    # PREDICTION
+    # =============================
 
-        seq = X_input.reshape(30, 5)
-        last = seq[-1]
+    inv_preds = None
 
-        new_row = np.vstack([seq[1:], [
-            last[0], last[1], last[2], pred, last[4]
-        ]])
+    try:
 
-        X_input = new_row.reshape(1, -1)
+        # -------------------------
+        # DEEP LEARNING MODEL
+        # -------------------------
+        if model_choice == "Deep Learning":
 
-    preds = np.array(predictions_scaled).reshape(-1, 1)
+            if dl_model is None or scaler is None:
+                st.error("DL model not found. Add models/stock_model.pkl and scaler.pkl")
+                st.stop()
 
-    dummy = np.zeros((30, 5))
-    dummy[:, 3] = preds[:, 0]
-    inv_preds = scaler.inverse_transform(dummy)[:, 3]
+            last_30 = df[['Open', 'High', 'Low', 'Close', 'Volume']].tail(30)
 
-    # Create future dates
+            scaled = scaler.transform(last_30)
+            X_input = scaled.reshape(1, -1)
+
+            predictions_scaled = []
+
+            for _ in range(30):
+                pred = dl_model.predict(X_input)[0]
+                predictions_scaled.append(pred)
+
+                seq = X_input.reshape(30, 5)
+                last = seq[-1]
+
+                new_row = np.vstack([seq[1:], [
+                    last[0], last[1], last[2], pred, last[4]
+                ]])
+
+                X_input = new_row.reshape(1, -1)
+
+            preds = np.array(predictions_scaled).reshape(-1, 1)
+
+            dummy = np.zeros((30, 5))
+            dummy[:, 3] = preds[:, 0]
+
+            inv_preds = scaler.inverse_transform(dummy)[:, 3]
+
+        # -------------------------
+        # ARIMA
+        # -------------------------
+        elif model_choice == "ARIMA":
+
+            series = df['Close']
+            model_arima = ARIMA(series, order=(5,1,0))
+            model_fit = model_arima.fit()
+
+            forecast = model_fit.forecast(steps=30)
+            inv_preds = forecast.values
+
+        # -------------------------
+        # SARIMA
+        # -------------------------
+        elif model_choice == "SARIMA":
+
+            series = df['Close']
+            model_sarima = SARIMAX(
+                series,
+                order=(1,1,1),
+                seasonal_order=(1,1,1,12)
+            )
+
+            model_fit = model_sarima.fit(disp=False)
+
+            forecast = model_fit.forecast(steps=30)
+            inv_preds = forecast.values
+
+        # -------------------------
+        # XGBOOST
+        # -------------------------
+        elif model_choice == "XGBoost":
+
+            df_ml = df.copy()
+
+            for i in range(1,6):
+                df_ml[f"lag_{i}"] = df_ml["Close"].shift(i)
+
+            df_ml.dropna(inplace=True)
+
+            X = df_ml.drop(columns=["Date", "Close"])
+            y = df_ml["Close"]
+
+            model_xgb = XGBRegressor(n_estimators=200)
+            model_xgb.fit(X, y)
+
+            last_row = X.iloc[-1].values.reshape(1, -1)
+
+            preds = []
+
+            for _ in range(30):
+                pred = model_xgb.predict(last_row)[0]
+                preds.append(pred)
+
+                last_row = np.roll(last_row, -1)
+                last_row[0, -1] = pred
+
+            inv_preds = np.array(preds)
+
+    except Exception as e:
+        st.error(f"Model failed: {e}")
+        st.stop()
+
+    # =============================
+    # OUTPUT
+    # =============================
+
     last_date = df['Date'].iloc[-1]
-    future_dates = [last_date + timedelta(days=i+1) for i in range(30)]
+
+    future_dates = [
+        last_date + timedelta(days=i+1) for i in range(30)
+    ]
 
     forecast_df = pd.DataFrame({
         'Date': future_dates,
@@ -79,7 +201,10 @@ if uploaded_file:
     st.subheader("📈 Forecasted Prices")
     st.write(forecast_df)
 
-    # Chart
+    # =============================
+    # CHART
+    # =============================
+
     hist = df[['Date', 'Close']].tail(60)
 
     combined = pd.concat([
@@ -89,3 +214,6 @@ if uploaded_file:
 
     st.subheader("📊 Historical + Prediction")
     st.line_chart(combined)
+
+else:
+    st.info("Upload dataset to start")
