@@ -6,3 +6,4 @@ joblib
 statsmodels
 xgboost
 openpyxl
+xlrd
