@@ -1,6 +1,7 @@
 streamlit
 pandas
 numpy
+scikit_learn
 joblib
 statsmodels
 xgboost
