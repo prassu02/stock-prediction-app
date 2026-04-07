@@ -41,28 +41,36 @@ if os.path.exists(model_path) and os.path.exists(scaler_path):
 # =============================
 # FILE UPLOAD
 # =============================
+uploaded_file = st.file_uploader(
+    "Upload CSV / Excel",
+    type=["csv", "xlsx", "xls"]
+)
 
-uploaded_file = st.file_uploader("Upload CSV / Excel",type=["csv", "xlsx", "xls"])
+def load_data(file):
+    try:
+        # Try CSV first
+        return pd.read_csv(file)
+    except:
+        try:
+            return pd.read_excel(file, engine="openpyxl")
+        except:
+            return pd.read_excel(file, engine="xlrd")
+
+# =============================
+# LOAD DATA
+# =============================
+
 if uploaded_file is not None:
-
-    if uploaded_file.name.endswith(".csv"):
-        df = pd.read_csv(uploaded_file)
-
-    elif uploaded_file.name.endswith(".xlsx"):
-        df = pd.read_excel(uploaded_file, engine="openpyxl")
-
-    elif uploaded_file.name.endswith(".xls"):
-        df = pd.read_excel(uploaded_file, engine="xlrd")
+    df = load_data(uploaded_file)
+    st.success(f"Using uploaded file: {uploaded_file.name}")
 
 else:
-    # Default dataset
     try:
-        df = pd.read_excel(default_file, engine="xlrd")
+        df = load_data(default_file)
         st.info("Using default dataset: AAPL (4).xls")
     except:
-        st.error("Default dataset not found or engine issue")
+        st.error("Default dataset not readable. Please upload file.")
         st.stop()
-
 # =============================
 # VALIDATION
 # =============================
