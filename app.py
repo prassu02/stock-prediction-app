@@ -10,6 +10,9 @@ from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from xgboost import XGBRegressor
 
+# Metrics
+from sklearn.metrics import mean_squared_error
+
 # =============================
 # CONFIG
 # =============================
@@ -214,7 +217,97 @@ except Exception as e:
 # =============================
 # OUTPUT
 # =============================
+# =============================
+# MODEL COMPARISON
+# =============================
 
+from sklearn.metrics import mean_squared_error
+
+st.subheader("🏆 Model Comparison")
+
+results = []
+
+try:
+    # Use last 30 actual values for evaluation
+    actual = df['Close'].tail(30).values
+
+    # -------- DL --------
+    if dl_model is not None:
+        dl_preds = inv_preds  # current selected model
+        rmse = np.sqrt(mean_squared_error(actual, dl_preds[:len(actual)]))
+        results.append(["Deep Learning", rmse])
+
+    # -------- ARIMA --------
+    try:
+        arima_model = ARIMA(df['Close'], order=(5,1,0)).fit()
+        arima_pred = arima_model.forecast(steps=30).values
+        rmse = np.sqrt(mean_squared_error(actual, arima_pred[:len(actual)]))
+        results.append(["ARIMA", rmse])
+    except:
+        pass
+
+    # -------- SARIMA --------
+    try:
+        sarima_model = SARIMAX(df['Close'],
+                              order=(1,1,1),
+                              seasonal_order=(1,1,1,12)).fit(disp=False)
+        sarima_pred = sarima_model.forecast(steps=30).values
+        rmse = np.sqrt(mean_squared_error(actual, sarima_pred[:len(actual)]))
+        results.append(["SARIMA", rmse])
+    except:
+        pass
+
+    # -------- XGBOOST --------
+    try:
+        df_ml = df.copy()
+        for i in range(1,6):
+            df_ml[f"lag_{i}"] = df_ml["Close"].shift(i)
+        df_ml.dropna(inplace=True)
+
+        X = df_ml.drop(columns=["Date","Close"])
+        y = df_ml["Close"]
+
+        xgb_model = XGBRegressor(n_estimators=200)
+        xgb_model.fit(X, y)
+
+        last_row = X.iloc[-1].values.reshape(1, -1)
+        preds = []
+
+        for _ in range(30):
+            pred = xgb_model.predict(last_row)[0]
+            preds.append(pred)
+            last_row = np.roll(last_row, -1)
+            last_row[0, -1] = pred
+
+        rmse = np.sqrt(mean_squared_error(actual, preds[:len(actual)]))
+        results.append(["XGBoost", rmse])
+    except:
+        pass
+
+except:
+    st.warning("Comparison failed")
+
+# =============================
+# TABLE
+# =============================
+
+if len(results) > 0:
+
+    comp_df = pd.DataFrame(results, columns=["Model", "RMSE"])
+
+    comp_df = comp_df.sort_values("RMSE")
+
+    st.dataframe(comp_df)
+
+    # Best model
+    best_model = comp_df.iloc[0]
+
+    st.success(f"🏆 Best Model: {best_model['Model']} (RMSE: {best_model['RMSE']:.2f})")
+
+    # Chart
+    import plotly.express as px
+    fig = px.bar(comp_df, x="Model", y="RMSE", title="Model Comparison")
+    st.plotly_chart(fig)
 last_date = df['Date'].iloc[-1]
 
 future_dates = [
