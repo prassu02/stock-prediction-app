@@ -48,10 +48,11 @@ if uploaded_file:
     # =============================
 
     if uploaded_file.name.endswith(".csv"):
-        df = pd.read_csv(uploaded_file)
-    else:
+        df = pd.read_csv()
+    elif:
         df = pd.read_excel(uploaded_file)
-
+    else:
+        df = pd.read_csv(uploaded_file)
     required_cols = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume']
 
     if not all(col in df.columns for col in required_cols):
