@@ -48,7 +48,7 @@ if uploaded_file:
     # =============================
 
     if uploaded_file.name.endswith(".csv"):
-        df = pd.read_excel()
+        df = pd.read_excel(AAPL (4).xls)
     else:
         df = pd.read_csv(uploaded_file)
         
