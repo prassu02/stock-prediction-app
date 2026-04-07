@@ -37,10 +37,12 @@ scaler = None
 if os.path.exists(model_path) and os.path.exists(scaler_path):
     dl_model = joblib.load(model_path)
     scaler = joblib.load(scaler_path)
+    
+# =============================
+# FILE UPLOAD
+# =============================
 
-# =============================
-# FILE UPLOAD / DEFAULT DATA
-# =============================
+uploaded_file = st.file_uploader("Upload CSV / Excel",type=["csv", "xlsx", "xls"])
 if uploaded_file is not None:
 
     if uploaded_file.name.endswith(".csv"):
