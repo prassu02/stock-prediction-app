@@ -1,37 +1,39 @@
 
 # 🚀 AI Stock Prediction Platform (Deep Learning + Time Series + ML)
 
-An end-to-end **AI-powered stock price forecasting platform** built with Streamlit.
-This app supports multiple models including Deep Learning, ARIMA, SARIMA, and XGBoost for predicting stock prices for the next 30 days.
+An end-to-end **AI-powered stock analytics and forecasting platform** built using Streamlit.
+This application enables users to upload stock datasets or use a default dataset to generate **30-day future price predictions** using multiple advanced models.
 
 ---
 
-## 📌 Features
+## 📌 Key Features
 
-✔ Upload CSV / Excel stock data
-✔ Automated data validation
+✔ Default dataset support (`AAPL (4).xls`)
+✔ Upload custom datasets (CSV / Excel)
 ✔ Multi-model prediction system
-✔ Interactive dashboard visualization
 ✔ 30-day future forecasting
-✔ Clean and deployable Streamlit UI
+✔ Interactive visualization dashboard
+✔ Streamlit Cloud deployment ready
+✔ Error-handled and production-safe pipeline
 
 ---
 
-## 🤖 Models Used
+## 🤖 Models Implemented
 
-* Deep Learning Model (Custom trained using historical sequences)
-* ARIMA (AutoRegressive Integrated Moving Average)
-* SARIMA (Seasonal ARIMA)
-* XGBoost Regressor
+* Deep Learning Model (Sequence-based prediction using trained model)
+* ARIMA (Trend-based forecasting)
+* SARIMA (Seasonal pattern forecasting)
+* XGBoost (Machine Learning regression)
 
 ---
 
 ## 📂 Project Structure
 
-```
+```id="r6k8ka"
 AI-DL-Platform/
 │── app.py
 │── requirements.txt
+│── AAPL (4).xls
 │── models/
 │    ├── stock_model.pkl
 │    ├── scaler.pkl
@@ -39,9 +41,9 @@ AI-DL-Platform/
 
 ---
 
-## 📊 Input Data Format
+## 📊 Dataset Requirements
 
-Your dataset must include the following columns:
+The dataset must contain the following columns:
 
 * Date
 * Open
@@ -50,65 +52,46 @@ Your dataset must include the following columns:
 * Close
 * Volume
 
-Example:
-
-| Date | Open | High | Low | Close | Volume |
-| ---- | ---- | ---- | --- | ----- | ------ |
-
 ---
 
-## ⚙️ Installation
+## ⚙️ Installation (Local)
 
-1. Clone the repository:
-
-```
-git clone <your-repo-link>
-cd AI-DL-Platform
-```
-
-2. Install dependencies:
-
-```
+```id="rbp0e0"
 pip install -r requirements.txt
-```
-
----
-
-## ▶️ Run the App
-
-```
 streamlit run app.py
-```
-
-Then open:
-
-```
-http://localhost:8501
 ```
 
 ---
 
 ## 🌐 Deployment
 
-You can deploy this app easily using:
+Deploy easily using:
 
 👉 Streamlit Community Cloud
 
-Steps:
+### Steps:
 
 1. Push code to GitHub
-2. Connect repository in Streamlit Cloud
+2. Connect repository to Streamlit Cloud
 3. Select `app.py`
 4. Deploy 🚀
 
 ---
 
-## ⚠️ Important Notes
+## 📈 Output
 
-* Deep Learning model requires:
+* Forecasted stock prices for next 30 days
+* Combined historical + predicted visualization
+* Model-driven predictions based on selected algorithm
 
-  * `models/stock_model.pkl`
-  * `models/scaler.pkl`
+---
+
+## ⚠️ Notes
+
+* Deep Learning model is optional:
+
+  * Requires `models/stock_model.pkl`
+  * Requires `models/scaler.pkl`
 
 * If not available, use:
 
@@ -116,21 +99,23 @@ Steps:
 
 ---
 
-## 📈 Output
+## 🔥 Advanced Capabilities
 
-* Forecasted stock prices (next 30 days)
-* Combined historical + predicted chart
-* Model-based predictions
+* Handles both uploaded and default datasets
+* Supports multiple forecasting techniques
+* Designed for scalability and deployment
+* Modular architecture for future upgrades
 
 ---
 
-## 🔥 Future Improvements
+## 🚀 Future Enhancements
 
-* Live stock data integration (API)
-* Auto model selection
+* Live stock API integration (real-time data)
+* Auto model selection (best model suggestion)
 * Hyperparameter tuning (Optuna)
-* Trading signals (Buy/Sell)
+* Trading signal generation (Buy/Sell)
 * Model performance comparison dashboard
+* REST API backend integration
 
 ---
 
@@ -148,11 +133,12 @@ Steps:
 ## 📌 Author
 
 **Prasanna Kumar**
-AI & Data Science Enthusiast
+AI & Data Science
 
+---
 
-## ⭐ If you like this project
+## ⭐ Support
 
-Give it a ⭐ on GitHub and share it!
+If you like this project, give it a ⭐ on GitHub!
 
-
+---
